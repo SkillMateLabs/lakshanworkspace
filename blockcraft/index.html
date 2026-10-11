@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>BlockCraft Edu 3D — Learn by Building</title>
+<link rel="stylesheet" href="styles.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="game-container"></div>
+
+<!-- Crosshair -->
+<div id="crosshair">+</div>
+
+<!-- Top HUD -->
+<div id="top-hud">
+  <div class="stat" title="Knowledge Points">⭐ <span id="knowledge">0</span></div>
+  <div class="stat" title="Energy — spend to build, earn back with quizzes">⚡ <span id="energy">100</span></div>
+  <div class="stat" title="Blocks placed">🧱 <span id="placed">0</span></div>
+  <div class="stat" title="Petals — earn by picking + selling, spend in shops">🪷 <span id="petals">150</span></div>
+  <div class="stat" title="Happiness">😊 <span id="happyNum">60</span><span class="hbar"><span id="happyFill"></span></span></div>
+  <div class="stat" title="Bag items">🎒 <span id="bagCount">0</span></div>
+  <div class="stat" id="seasonPill" title="Season — drifts every 5 min, click to drift early">🌸 <span id="seasonName">Spring</span></div>
+  <div class="stat hidden" id="drillPill" title="Drill Shovel owned — bedrock is drillable!">⚒️</div>
+  <div class="stat" id="mpPill" style="display:none" title="Friends here">👥 <span id="mpCount">1</span></div>
+  <button id="quiz-btn" title="Answer questions to earn blocks + energy (Q)">📚 Earn Blocks</button>
+  <button id="bag-btn" title="Open bag (I)">🎒 Bag</button>
+  <button id="bike-btn" title="Ride / hop off bike (B)">🚲 Bike</button>
+  <button id="fly-btn" title="Fly on/off (G or double-tap Space)">🕊️ Fly</button>
+  <button id="view-btn" title="First-person / third-person view (V)">👁️ First-person</button>
+  <button id="bell-btn" style="display:none" title="Ring bell (H)">🔔</button>
+  <button id="decorate-btn" title="Decorate home">🏡 Decorate</button>
+  <button id="friends-btn" title="Wander with real people (shortcut: F)">👥 Friends</button>
+  <button id="time-btn" title="Hide & Time: share location, hide anywhere, time-travel (Y)">🕰️ Hide & Time</button>
+  <button id="mine-btn" title="Go to the empty Mining Fields / back to town (M)">⛏️ Mine</button>
+  <button id="talk-btn" style="display:none" title="Talk (T)">💬 Talk</button>
+  <button id="save-btn" title="Save world">💾</button>
+  <button id="sound-btn" title="Music on/off">🔊</button>
+  <button id="help-btn" title="Help">?</button>
+  <button id="bug-btn" title="Report a bug (P)">🐞 Bugs</button>
+</div>
+<canvas id="minimap" width="150" height="118" title="Minimap"></canvas>
+<div id="timebar" class="hidden">
+  <span id="timeStatus" title="Where / when you are">🏠 present</span>
+  <button id="past-btn" title="Travel to the past (7)">🦕 Past</button>
+  <button id="present-btn" class="on" title="Back to present (8)">🏠 Now</button>
+  <button id="future-btn" title="Guess the future — reshuffles every visit (9)">🔮 Future?</button>
+  <button id="time-hide-btn" title="Hide again">📍 Re-hide</button>
+</div>
+<div id="interactTip" class="hidden">press <b>E</b></div>
+<div id="fade"></div>
+<div id="chatLog"></div>
+<div id="chatRow" class="hidden">
+  <input type="text" id="chatIn" maxlength="120" placeholder="say something kind…" />
+  <button id="chatSend">send</button>
+</div>
+<button id="actBtn" class="hidden"><span id="actLbl">tap</span></button>
+
+<!-- Selected block info / shape lesson card -->
+<div id="info-card" class="hidden"></div>
+
+<!-- Hotbar -->
+<div id="hotbar"></div>
+<div id="hint">WASD move · E interact · Q quiz · F friends · G fly · V see yourself · Click = break · Right-click = place</div>
+
+<!-- Mobile controls -->
+<div id="mobile-controls">
+  <div id="joystick"><div id="stick"></div></div>
+  <div id="mobile-btns">
+    <button data-act="jump">⤒</button>
+    <button data-act="down">⤓</button>
+    <button data-act="break">⛏</button>
+    <button data-act="place">🧱</button>
+    <button data-act="quiz">📚</button>
+    <button data-act="fly">🕊️</button>
+    <button data-act="view" title="First / third person">👁️</button>
+    <button data-act="act" title="Interact">E</button>
+    <button data-act="mine" title="Mining Fields — go dig / back to town">🌋</button>
+  </div>
+</div>
+
+<!-- Start overlay -->
+<div id="start-screen" class="overlay">
+  <div class="panel">
+    <h1>🧱 BlockCraft <span>Edu 3D</span></h1>
+    <p class="tagline">A Minecraft-style builder where <b>answering questions</b> gives you blocks, energy & knowledge — plus a cozy town: shops, seasons, friends & home.</p>
+    <div class="subjects-preview">
+      <span>➕ Math</span><span>🔬 Science</span><span>📖 English</span><span>🎵 Music</span><span>🔷 3D Shapes</span>
+    </div>
+    <label class="creator-label">your name</label>
+    <input type="text" id="nameInput" value="Sunny" maxlength="12" />
+    <label class="creator-label">builder style</label>
+    <div class="swatches" id="styleRow"></div>
+    <label class="creator-label">hair color</label>
+    <div class="swatches" id="hairRow"></div>
+    <label class="creator-label">shirt</label>
+    <div class="swatches" id="shirtRow"></div>
+    <label class="creator-label">you are…</label>
+    <div class="swatches" id="genderRow"></div>
+    <div class="how">
+      <div>⛏️ <b>Build:</b> WASD + mouse, left-click break, right-click place</div>
+      <div>🕊️ <b>Fly:</b> press <b>G</b>, double-tap <b>Space</b>, or the <b>🕊️ Fly</b> button — hold <b>Space</b> to rise, <b>Shift</b> (or <b>C</b>) to sink</div>
+      <div>📚 <b>Learn:</b> press <b>Q</b> / Earn Blocks → pick a subject → correct answer = +8 blocks + ⚡25 + ⭐10</div>
+      <div>🔷 <b>Shapes:</b> place <b>Cube</b> & <b>Pyramid</b> blocks to see faces / edges / vertices facts</div>
+      <div>🌸 <b>Cozy:</b> <b>E</b> picks flowers / talks / shops, <b>B</b> bike, <b>T</b> chat, <b>I</b> bag — seasons change shop stock!</div>
+    </div>
+    <button id="play-btn" class="big">▶ Play & Learn</button>
+    <button id="continue-btn" class="ghost hidden">🌙 Continue last visit</button>
+    <button id="new-world-btn" class="ghost">🌍 New flat world</button>
+    <p class="tiny">Runs 100% in the browser · progress saves automatically · works on phone too</p>
+  </div>
+</div>
+
+<!-- Quiz modal -->
+<div id="quiz-modal" class="overlay hidden">
+  <div class="panel quiz-panel">
+    <div class="quiz-head">
+      <h2>📚 Earn Blocks</h2>
+      <button id="quiz-close">✕</button>
+    </div>
+    <div id="subject-tabs"></div>
+    <div id="quiz-body">
+      <div id="quiz-q"></div>
+      <div id="quiz-opts"></div>
+      <div id="quiz-feedback"></div>
+      <button id="quiz-next" class="big hidden">Next question →</button>
+    </div>
+    <div class="quiz-foot">Correct = +8 <span id="reward-block">🧱</span> + ⚡25 + ⭐10 · Wrong = +⚡5 try again</div>
+  </div>
+</div>
+
+<!-- Help modal -->
+<div id="help-modal" class="overlay hidden">
+  <div class="panel">
+    <div class="quiz-head"><h2>❓ How to play</h2><button id="help-close">✕</button></div>
+    <ul class="help-list">
+      <li><b>Move:</b> WASD / arrows, <b>Jump:</b> Space, <b>Look:</b> mouse (click game to lock). Stuck? Press <b>U</b> to pop free!</li>
+      <li><b>Fly 🕊️:</b> <b>G</b>, double-tap <b>Space</b>, or the <b>🕊️ Fly</b> button. Hold <b>Space</b> to rise, <b>Shift</b> (or <b>C</b>) to sink. On phone: tap 🕊️, then ⤒ up / ⤓ down.</li>
+      <li><b>See yourself 🧍:</b> you play as a human — press <b>V</b> to switch between seeing yourself and first-person view. Everyone in the valley is human like you! New clothes from shops change your shirt, hats sit on your head!</li>
+      <li><b>Break:</b> left click · <b>Place:</b> right click · <b>Pick block:</b> 1–9 or scroll or tap hotbar</li>
+      <li><b>Out of blocks or energy?</b> Press <b>Q</b>, pick Math / Science / English / Music / 3D Shapes, answer!</li>
+      <li><b>3D Shapes mission:</b> place a <b>Cube</b> (6 square faces) and a <b>Pyramid</b> (4 triangle faces + 1 square base) and read their fact cards.</li>
+      <li><b>Cozy:</b> <b>E</b> interact (pick flower / talk / shop / rest), <b>I</b> bag, <b>B</b> ride bike, <b>H</b> bell, <b>T</b> chat with friends, <b>Esc</b> closes panels.</li>
+      <li><b>Earn petals 🪷:</b> pick wildflowers, shells, mushrooms & starflowers (E), sell at Flower Shop / Season Market. Spend in 11 shops + 1 seasonal pop-up.</li>
+      <li><b>Dig deep ⛏️:</b> the earth has layers — grass, dirt, stone, then a RED bedrock level. Buy the ⚒️ Drill Shovel at Gadget Tool Shed (far north-east) to drill it for bonus energy + knowledge! Volt Electronics (far north-west) sells lamps, radios & energy batteries.</li>
+      <li><b>Mining Fields ⛏️:</b> breaking blocks works ONLY in the Mining Fields — press <b>⛏️ Mine</b> (or <b>M</b>) to jump there and dig freely, press again when done to come back out. Town is for building (right-click places), quizzes, shops &amp; friends.</li>
+      <li><b>Seasons 🌸☀️🍁❄️:</b> drift every 5 min (or click the season pill). Stock, open shops & pickups change. Flower Shop rests autumn/winter, Bike Shop rests winter, Teahouse rests summer.</li>
+      <li><b>Home 🏡:</b> you wake up INSIDE your own BIG cottage room (solid roof overhead, wide door). E on the bed naps, E on the door mat steps out to your village lot — every player's house is in a different spot, and yours is labeled <b>🏡 MY HOUSE</b> with a golden beacon. Decorate inside + outside with furniture & blocks!</li>
+      <li><b>Trees 🌳:</b> trees never grow on top of you, spawn, or doorways anymore — walk around trunks, chop them if one blocks you, and press <b>U</b> if you ever get wedged.</li>
+      <li><b>Open world 🌍:</b> no walls, no edges — walk or fly as far as you like, the meadow keeps growing under your feet. Flowers & trees keep appearing out there too. The minimap now follows you.</li>
+      <li><b>Friends 👥:</b> press <b>F</b> or the Friends button for live multiplayer (falls back to cozy bot neighbours). Talk button / T chats. Note: while the mouse is captured for looking, press <b>Esc</b> first to click HUD buttons — or just use the letter keys.</li>
+      <li><b>Phone:</b> left stick moves, drag right side to look, buttons to jump / mine / build.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Bug report modal -->
+<div id="bug-modal" class="overlay hidden">
+  <div class="panel quiz-panel">
+    <div class="quiz-head"><h2>🐞 Report a bug</h2><button id="bug-close">✕</button></div>
+    <p class="tagline">Found something broken? Tell us below — your spot, season &amp; recent errors attach automatically. Private: reports stay on <b>your</b> device and go only to the developer — never to other players. Use copy/download to send.</p>
+    <label class="creator-label">short title</label>
+    <input type="text" id="bugTitle" maxlength="80" placeholder="e.g. mined block came back" />
+    <label class="creator-label">what happened?</label>
+    <textarea id="bugDesc" rows="4" maxlength="1000" placeholder="what did you do, what went wrong…"></textarea>
+    <div class="row-btns">
+      <button id="bug-submit" class="big" style="flex:2">send report ✓</button>
+      <button id="bug-copy" class="ghost">⧉ copy all</button>
+      <button id="bug-dl" class="ghost">⬇ download</button>
+    </div>
+    <p class="tiny" id="bugCtx"></p>
+    <h3 style="color:#2b2117;margin-top:10px">my reports (<span id="bugCount">0</span>)</h3>
+    <div id="bugList" class="help-list"></div>
+  </div>
+</div>
+
+<!-- Shop modal -->
+<div id="shop-modal" class="overlay hidden">
+  <div class="panel quiz-panel">
+    <div class="quiz-head"><h2 id="shopName">Shop</h2><button id="shop-close">✕</button></div>
+    <p class="tagline" id="shopDesc"></p>
+    <div id="sellRow" class="sell-row hidden">
+      <button id="sellFlowers">sell flowers (+6)</button>
+      <button id="sellShells">sell shells (+9)</button>
+      <button id="sellShrooms">sell mushrooms (+12)</button>
+      <button id="sellStars">sell starflowers (+14)</button>
+    </div>
+    <div id="shopGrid" class="shop-grid"></div>
+    <div id="keeperRow" class="row-btns"><button id="keeper-btn" class="ghost">👋 Meet the keeper</button></div>
+  </div>
+</div>
+
+<!-- Bag modal -->
+<div id="bag-modal" class="overlay hidden">
+  <div class="panel quiz-panel">
+    <div class="quiz-head"><h2>🎒 Your bag</h2><button id="bag-close">✕</button></div>
+    <p class="tagline" id="bagSub"></p>
+    <div id="bagGrid" class="shop-grid"></div>
+  </div>
+</div>
+
+<!-- Dialog modal -->
+<div id="dialog-modal" class="overlay hidden">
+  <div class="panel" style="max-width:420px">
+    <div id="dialogFace">M</div>
+    <h2 id="dialogName" style="text-align:center"></h2>
+    <p class="tagline" id="dialogText" style="font-size:15px;line-height:1.6"></p>
+    <button id="dialog-close" class="big">have a kind day</button>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script src="quiz-data.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>
